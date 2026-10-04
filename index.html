@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Le Mot Solver - Viser 2 à 3 Tentatives Max</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0e0e0f;
+      --card-bg: #18181b;
+      --card-border: #27272a;
+      --text: #f4f4f5;
+      --text-muted: #a1a1aa;
+      --green: #3eaa42;
+      --yellow: #c9b458;
+      --grey: #3a3a3c;
+      --border-empty: #3a3a3c;
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --tile-size: 56px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: #121214;
+      border-bottom: 1px solid var(--card-border);
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--green), #22c55e);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 20px;
+      color: white;
+      box-shadow: 0 4px 12px rgba(62, 170, 66, 0.3);
+    }
+
+    .brand-title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .header-links a {
+      color: #818cf8;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 6px;
+      background: rgba(99, 102, 241, 0.1);
+      transition: all 0.2s;
+    }
+    .header-links a:hover {
+      background: rgba(99, 102, 241, 0.25);
+    }
+
+    /* Tabs */
+    .tabs-nav {
+      display: flex;
+      gap: 8px;
+      padding: 12px 24px;
+      background: #141416;
+      border-bottom: 1px solid var(--card-border);
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 8px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:hover {
+      color: var(--text);
+      background: #202024;
+    }
+
+    .tab-btn.active {
+      color: white;
+      background: #27272a;
+      border-color: #3f3f46;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+
+    main {
+      flex: 1;
+      padding: 24px;
+      max-width: 1280px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Assistant Layout */
+    .assistant-grid {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      .assistant-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Grid Area */
+    .grid-container {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+
+    .board {
+      display: grid;
+      grid-template-rows: repeat(6, 1fr);
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .board-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+    }
+
+    .board-row.current-row {
+      position: relative;
+    }
+
+    .tile {
+      width: var(--tile-size);
+      height: var(--tile-size);
+      border: 2px solid var(--border-empty);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      font-weight: 800;
+      color: white;
+      text-transform: uppercase;
+      user-select: none;
+      cursor: pointer;
+      transition: transform 0.15s, background-color 0.2s, border-color 0.2s;
+    }
+
+    .tile:hover {
+      transform: scale(1.05);
+    }
+
+    .tile.filled {
+      border-color: #52525b;
+    }
+
+    .tile.grey {
+      background-color: var(--grey);
+      border-color: var(--grey);
+    }
+
+    .tile.yellow {
+      background-color: var(--yellow);
+      border-color: var(--yellow);
+    }
+
+    .tile.green {
+      background-color: var(--green);
+      border-color: var(--green);
+    }
+
+    .tile.selected {
+      border-color: #818cf8;
+      box-shadow: 0 0 12px rgba(129, 140, 248, 0.5);
+    }
+
+    .legend {
+      display: flex;
+      gap: 14px;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      background: #121214;
+      padding: 8px 16px;
+      border-radius: 8px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+    }
+    .legend-dot.grey { background: var(--grey); }
+    .legend-dot.yellow { background: var(--yellow); }
+    .legend-dot.green { background: var(--green); }
+
+    .grid-actions {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 12px 18px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--green), #22c55e);
+      color: white;
+      box-shadow: 0 4px 12px rgba(62, 170, 66, 0.3);
+    }
+    .btn-primary:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: #27272a;
+      color: var(--text);
+      border: 1px solid #3f3f46;
+    }
+    .btn-secondary:hover {
+      background: #3f3f46;
+    }
+
+    /* Suggestions Area */
+    .suggestions-container {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .stats-banner {
+      background: linear-gradient(135deg, #1e1b4b, #1e293b);
+      border: 1px solid #3730a3;
+      border-radius: 16px;
+      padding: 20px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .stat-badge {
+      display: flex;
+      flex-direction: column;
+    }
+    .stat-value {
+      font-size: 32px;
+      font-weight: 800;
+      color: #a5b4fc;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .stat-label {
+      font-size: 13px;
+      color: #94a3b8;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .suggestions-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .panel-title {
+      font-size: 18px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .suggestion-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .suggestion-card {
+      background: #1f1f23;
+      border: 1px solid #2e2e33;
+      border-radius: 12px;
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .suggestion-card:hover {
+      border-color: #6366f1;
+      background: #25252b;
+      transform: translateX(4px);
+    }
+
+    .sugg-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .sugg-rank {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--text-muted);
+      width: 20px;
+    }
+
+    .sugg-word {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: #f8fafc;
+    }
+
+    .sugg-tag {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+    }
+
+    .tag-guarantee {
+      background: rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.4);
+    }
+
+    .tag-prob {
+      background: rgba(234, 179, 8, 0.2);
+      color: #facc15;
+      border: 1px solid rgba(234, 179, 8, 0.4);
+    }
+
+    .tag-entropy {
+      background: rgba(99, 102, 241, 0.2);
+      color: #a5b4fc;
+      border: 1px solid rgba(99, 102, 241, 0.4);
+    }
+
+    .sugg-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .sugg-metric {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-align: right;
+    }
+    .sugg-metric strong {
+      color: var(--text);
+    }
+
+    .sugg-btn {
+      background: #3f3f46;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .sugg-btn:hover {
+      background: var(--green);
+    }
+
+    /* Candidates pool */
+    .candidates-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 20px 24px;
+    }
+
+    .candidates-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      max-height: 180px;
+      overflow-y: auto;
+      padding-top: 10px;
+    }
+
+    .cand-chip {
+      background: #27272a;
+      border: 1px solid #3f3f46;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      font-weight: 600;
+      color: #e4e4e7;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .cand-chip:hover {
+      background: #3f3f46;
+      border-color: #818cf8;
+      color: white;
+    }
+
+    /* Oracle Tab */
+    .oracle-container {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    .oracle-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    }
+
+    .oracle-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .date-picker-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #1f1f23;
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid #3f3f46;
+    }
+
+    .date-input {
+      background: transparent;
+      border: none;
+      color: white;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .secret-box {
+      background: linear-gradient(135deg, #1c1917, #292524);
+      border: 1px solid #78350f;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .secret-word {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 40px;
+      font-weight: 800;
+      letter-spacing: 8px;
+      color: #fde047;
+      margin: 10px 0;
+      transition: filter 0.3s;
+    }
+
+    .secret-word.blurred {
+      filter: blur(10px);
+      cursor: pointer;
+    }
+
+    .plan-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .plan-btn {
+      padding: 16px;
+      border-radius: 12px;
+      border: none;
+      font-family: inherit;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .plan-btn-2 {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: white;
+      box-shadow: 0 4px 16px rgba(217, 119, 6, 0.3);
+    }
+    .plan-btn-3 {
+      background: linear-gradient(135deg, var(--green), #16a34a);
+      color: white;
+      box-shadow: 0 4px 16px rgba(34, 197, 94, 0.3);
+    }
+
+    .plan-btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.1);
+    }
+
+    .plan-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 10px;
+    }
+
+    .step-card {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .step-tiles {
+      display: flex;
+      gap: 6px;
+    }
+
+    .step-tile {
+      width: 44px;
+      height: 44px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 800;
+      color: white;
+    }
+
+    .step-desc {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    .step-desc strong {
+      color: var(--text);
+    }
+
+    /* Simulator Tab */
+    .theory-box {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 28px;
+      line-height: 1.7;
+      color: #d4d4d8;
+    }
+
+    .theory-box h3 {
+      color: white;
+      margin: 20px 0 10px 0;
+      font-size: 19px;
+    }
+    .theory-box h3:first-child {
+      margin-top: 0;
+    }
+
+    .theory-box code {
+      background: #27272a;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      color: #a5b4fc;
+    }
+
+    .alert-tip {
+      background: rgba(99, 102, 241, 0.1);
+      border-left: 4px solid #6366f1;
+      padding: 14px 18px;
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #c7d2fe;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-logo">M</div>
+      <div>
+        <div class="brand-title">Le Mot Solver • Objectif 2-3 Coups Max</div>
+        <div class="brand-subtitle">Optimisé spécifiquement pour wordle.louan.me</div>
+      </div>
+    </div>
+    <div class="header-links">
+      <a href="https://wordle.louan.me" target="_blank" rel="noopener">Ouvrir wordle.louan.me ↗</a>
+    </div>
+  </header>
+
+  <nav class="tabs-nav">
+    <button class="tab-btn active" onclick="switchTab('assistant')">
+      <span>🧠</span> Assistant IA en Direct
+    </button>
+    <button class="tab-btn" onclick="switchTab('oracle')">
+      <span>🔮</span> Oracle Louan (Garantie 2 ou 3 coups)
+    </button>
+    <button class="tab-btn" onclick="switchTab('theory')">
+      <span>📊</span> Théorie de Shannon & Stratégie
+    </button>
+  </nav>
+
+  <main>
+    <section id="tab-assistant" class="tab-content active">
+      <div class="assistant-grid">
+        
+        <div class="grid-container">
+          <div class="legend">
+            <div class="legend-item"><span class="legend-dot grey"></span> Gris (Absent)</div>
+            <div class="legend-item"><span class="legend-dot yellow"></span> Jaune (Mal placé)</div>
+            <div class="legend-item"><span class="legend-dot green"></span> Vert (Bien placé)</div>
+          </div>
+
+          <div class="board" id="board"></div>
+
+          <div class="grid-actions">
+            <button class="btn btn-primary" onclick="submitCurrentRow()">
+              <span>⚡</span> Analyser ce coup
+            </button>
+            <button class="btn btn-secondary" onclick="resetBoard()">
+              <span>🔄</span> Réinitialiser
+            </button>
+          </div>
+          <div style="margin-top: 14px; font-size: 13px; color: var(--text-muted); text-align: center;">
+            💡 <em>Tapez votre mot au clavier, puis <strong>cliquez sur chaque case</strong> pour lui donner la couleur vue sur wordle.louan.me !</em>
+          </div>
+        </div>
+
+        <div class="suggestions-container">
+          
+          <div class="stats-banner">
+            <div class="stat-badge">
+              <span class="stat-value" id="stat-remaining">1792</span>
+              <span class="stat-label">Mots candidats restants</span>
+            </div>
+            <div class="stat-badge">
+              <span class="stat-value" id="stat-entropy">10.8 bits</span>
+              <span class="stat-label">Incertitude résiduelle</span>
+            </div>
+            <div class="stat-badge">
+              <span class="stat-value" id="stat-target-prob">0.06%</span>
+              <span class="stat-label">Victoire directe</span>
+            </div>
+          </div>
+
+          <div class="suggestions-panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span>🎯</span> Recommandations Optimales (IA Shannon)
+              </div>
+              <span style="font-size: 13px; color: var(--text-muted);">Cliquez pour insérer</span>
+            </div>
+
+            <div class="suggestion-cards" id="suggestion-cards"></div>
+          </div>
+
+          <div class="candidates-panel">
+            <div class="panel-header" style="margin-bottom: 8px;">
+              <div class="panel-title" style="font-size: 15px;">
+                <span>📚</span> Liste des mots encore possibles
+              </div>
+            </div>
+            <div class="candidates-list" id="candidates-list"></div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <section id="tab-oracle" class="tab-content">
+      <div class="oracle-container">
+        
+        <div class="oracle-card">
+          <div class="oracle-header">
+            <div>
+              <h2 style="font-size: 22px; font-weight: 800;">Oracle Louan.me</h2>
+              <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">
+                Calcul déterministe du mot du jour via l'algorithme PRNG exact du jeu.
+              </p>
+            </div>
+            <div class="date-picker-box">
+              <span>📅</span>
+              <input type="date" id="oracle-date-input" class="date-input" onchange="loadOracleDate()">
+            </div>
+          </div>
+
+          <div class="secret-box">
+            <div style="font-size: 14px; font-weight: 700; color: #fbbf24; text-transform: uppercase; letter-spacing: 1px;">
+              Mot secret de cette date
+            </div>
+            <div class="secret-word blurred" id="secret-word" onclick="toggleSecretBlur()" title="Cliquez pour révéler / masquer">
+              •••••
+            </div>
+            <div style="font-size: 13px; color: var(--text-muted);">
+              (Cliquer sur le mot pour révéler / masquer le spoiler)
+            </div>
+          </div>
+
+          <div class="plan-buttons">
+            <button class="plan-btn plan-btn-2" onclick="generatePlan(2)">
+              <span>⚡ Stratégie 2 Coups MAXIMUM</span>
+              <span style="font-size: 12px; opacity: 0.9; font-weight: 500;">Ouverture crédible + Victoire immédiate</span>
+            </button>
+            <button class="plan-btn plan-btn-3" onclick="generatePlan(3)">
+              <span>🎯 Stratégie 3 Coups MAXIMUM</span>
+              <span style="font-size: 12px; opacity: 0.9; font-weight: 500;">Progression 100% indétectable & naturelle</span>
+            </button>
+          </div>
+
+          <div id="plan-container" style="display: none;">
+            <h3 style="font-size: 17px; margin-bottom: 12px; color: #a5b4fc;">Séquence à jouer sur wordle.louan.me :</h3>
+            <div class="plan-steps" id="plan-steps"></div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <section id="tab-theory" class="tab-content">
+      <div class="theory-box" style="max-width: 900px; margin: 0 auto;">
+        <h2 style="font-size: 24px; color: white; margin-bottom: 16px;">
+          🔬 Comment l'Intelligence Mathématique Vise 2 à 3 Coups
+        </h2>
+        
+        <p>
+          Sur <strong>wordle.louan.me</strong>, le jeu sélectionne chaque jour un mot parmi un dictionnaire cible de <strong>1 792 mots français</strong>.
+        </p>
+
+        <div class="alert-tip">
+          <strong>La formule de l'incertitude initiale (Entropie de Shannon) :</strong><br>
+          \( H_0 = \log_2(1792) \approx 10,81 \text{ bits d'information.} \)
+        </div>
+
+        <h3>1. Le 1er Coup : La Moisson d'Information</h3>
+        <p>
+          Chaque essai produit une réponse de couleurs parmi \( 3^5 = 243 \) motifs possibles. Le meilleur mot d'ouverture en français est <code>TARIE</code> (ou <code>TAIRE</code> / <code>RAIES</code>), qui apporte à lui seul plus de <strong>6,08 bits d'entropie</strong> !
+        </p>
+        <p>
+          Après avoir joué <code>TARIE</code>, l'espace des solutions est réduit de 1792 à une moyenne de <strong>43 mots</strong> seulement (et une médiane de 5 mots restants !).
+        </p>
+
+        <h3>2. Le 2ème Coup : La Décision Stratégique (Le Pivot)</h3>
+        <p>
+          C'est au deuxième coup que se joue l'objectif des <strong>2 ou 3 coups</strong> :
+        </p>
+        <ul style="margin-left: 24px; margin-top: 8px;">
+          <li style="margin-bottom: 6px;">
+            <strong>Si les candidats restants sont très peu nombreux (\( \le 3 \))</strong> : L'algorithme propose directement une cible. Vous avez <strong>33% à 100% de chances de gagner en 2 coups</strong> !
+          </li>
+          <li>
+            <strong>S'il reste un groupe de 4 à 20 mots</strong> : L'algorithme calcule le mot idéal (baptisé <em>séparateur minimax</em>). Si ce mot partitionne toutes les cibles restantes en groupes de taille 1, <strong>la victoire au 3ème coup est mathématiquement garantie à 100%</strong>.
+          </li>
+        </ul>
+
+        <h3>3. L'Oracle Déterministe</h3>
+        <p>
+          Contrairement aux jeux avec serveur sécurisé, <code>wordle.louan.me</code> génère son mot du jour directement dans le navigateur du joueur via la graine <code>YYYY-M-D</code> au fuseau de Paris. Notre programme peut donc prédire à coup sûr le mot du jour et générer une trajectoire en 2 ou 3 coups parfaits.
+        </p>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    let currentRow = 0;
+    let currentCol = 0;
+    let grid = Array(6).fill().map(() => Array(5).fill(''));
+    let colors = Array(6).fill().map(() => Array(5).fill(0));
+    let history = [];
+    let currentSecretWord = "";
+
+    const COLOR_CLASSES = ['grey', 'yellow', 'green'];
+
+    function initBoard() {
+      const boardEl = document.getElementById('board');
+      boardEl.innerHTML = '';
+      for (let r = 0; r < 6; r++) {
+        const rowEl = document.createElement('div');
+        rowEl.className = 'board-row' + (r === currentRow ? ' current-row' : '');
+        rowEl.id = `row-${r}`;
+        for (let c = 0; c < 5; c++) {
+          const tile = document.createElement('div');
+          tile.className = 'tile';
+          tile.id = `tile-${r}-${c}`;
+          tile.onclick = () => cycleTileColor(r, c);
+          rowEl.appendChild(tile);
+        }
+        boardEl.appendChild(rowEl);
+      }
+      updateBoardUI();
+    }
+
+    function updateBoardUI() {
+      for (let r = 0; r < 6; r++) {
+        const rowEl = document.getElementById(`row-${r}`);
+        if (rowEl) {
+          rowEl.className = 'board-row' + (r === currentRow ? ' current-row' : '');
+        }
+        for (let c = 0; c < 5; c++) {
+          const tile = document.getElementById(`tile-${r}-${c}`);
+          if (!tile) continue;
+          tile.innerText = grid[r][c];
+          
+          tile.classList.remove('grey', 'yellow', 'green', 'filled', 'selected');
+          if (grid[r][c]) {
+            tile.classList.add('filled');
+          }
+          if (r < currentRow || colors[r][c] > 0) {
+            tile.classList.add(COLOR_CLASSES[colors[r][c]]);
+          }
+          if (r === currentRow && c === currentCol) {
+            tile.classList.add('selected');
+          }
+        }
+      }
+    }
+
+    function cycleTileColor(r, c) {
+      if (r > currentRow) return;
+      colors[r][c] = (colors[r][c] + 1) % 3;
+      updateBoardUI();
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT') return;
+
+      if (e.key === 'Backspace') {
+        if (currentCol > 0) {
+          currentCol--;
+          grid[currentRow][currentCol] = '';
+          colors[currentRow][currentCol] = 0;
+          updateBoardUI();
+        }
+      } else if (e.key === 'Enter') {
+        submitCurrentRow();
+      } else if (/^[a-zA-Z]$/.test(e.key)) {
+        if (currentCol < 5) {
+          grid[currentRow][currentCol] = e.key.toUpperCase();
+          colors[currentRow][currentCol] = 0;
+          currentCol++;
+          updateBoardUI();
+        }
+      }
+    });
+
+    function insertWord(word) {
+      word = word.toUpperCase().trim();
+      if (word.length !== 5) return;
+      for (let c = 0; c < 5; c++) {
+        grid[currentRow][c] = word[c];
+        colors[currentRow][c] = 0;
+      }
+      currentCol = 5;
+      updateBoardUI();
+    }
+
+    async function submitCurrentRow() {
+      const word = grid[currentRow].join('');
+      if (word.length !== 5) {
+        alert("Veuillez entrer un mot complet de 5 lettres avant d'analyser.");
+        return;
+      }
+
+      history.push({
+        guess: word,
+        pattern: colors[currentRow]
+      });
+
+      if (colors[currentRow].every(c => c === 2)) {
+        alert(`🎉 BRAVO ! Mot résolu en ${currentRow + 1} coup(s) !`);
+        return;
+      }
+
+      if (currentRow < 5) {
+        currentRow++;
+        currentCol = 0;
+      }
+
+      updateBoardUI();
+      await fetchAnalysis();
+    }
+
+    async function fetchAnalysis() {
+      try {
+        const resp = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ history: history })
+        });
+        const data = await resp.json();
+        renderAnalysis(data);
+      } catch (err) {
+        console.error("Erreur d'analyse:", err);
+      }
+    }
+
+    function renderAnalysis(data) {
+      const remainingCount = data.remaining_count;
+      document.getElementById('stat-remaining').innerText = remainingCount;
+      
+      const entropy = remainingCount > 0 ? (Math.log2(remainingCount)).toFixed(1) : 0;
+      document.getElementById('stat-entropy').innerText = `${entropy} bits`;
+      
+      const probWin = remainingCount > 0 ? (100 / remainingCount).toFixed(1) : 0;
+      document.getElementById('stat-target-prob').innerText = `${probWin}%`;
+
+      const suggContainer = document.getElementById('suggestion-cards');
+      suggContainer.innerHTML = '';
+      
+      if (!data.suggestions || data.suggestions.length === 0) {
+        suggContainer.innerHTML = '<div style="color: #ef4444; padding: 12px;">Aucun mot trouvé correspondant à ces indices. Vérifiez les couleurs !</div>';
+      } else {
+        data.suggestions.forEach((sugg, i) => {
+          const card = document.createElement('div');
+          card.className = 'suggestion-card';
+          card.onclick = () => insertWord(sugg.word);
+
+          let badgeHtml = '';
+          if (sugg.guarantee_3) {
+            badgeHtml = '<span class="sugg-tag tag-guarantee">🎯 Garantie 3 coups</span>';
+          } else if (sugg.p_win_now > 0) {
+            badgeHtml = `<span class="sugg-tag tag-prob">🔥 ${Math.round(sugg.p_win_now * 100)}% 2 coups</span>`;
+          } else {
+            badgeHtml = `<span class="sugg-tag tag-entropy">${sugg.entropy} bits</span>`;
+          }
+
+          card.innerHTML = `
+            <div class="sugg-left">
+              <span class="sugg-rank">#${i + 1}</span>
+              <span class="sugg-word">${sugg.word}</span>
+              ${badgeHtml}
+            </div>
+            <div class="sugg-right">
+              <div class="sugg-metric">
+                <div>${sugg.reason}</div>
+              </div>
+              <button class="sugg-btn" onclick="event.stopPropagation(); insertWord('${sugg.word}')">Choisir</button>
+            </div>
+          `;
+          suggContainer.appendChild(card);
+        });
+      }
+
+      const candContainer = document.getElementById('candidates-list');
+      candContainer.innerHTML = '';
+      (data.candidates || []).forEach(cand => {
+        const chip = document.createElement('span');
+        chip.className = 'cand-chip';
+        chip.innerText = cand;
+        chip.onclick = () => insertWord(cand);
+        candContainer.appendChild(chip);
+      });
+      if (data.has_more) {
+        const moreSpan = document.createElement('span');
+        moreSpan.style.color = '#71717a';
+        moreSpan.style.fontSize = '13px';
+        moreSpan.style.alignSelf = 'center';
+        moreSpan.innerText = `... et ${remainingCount - data.candidates.length} autres`;
+        candContainer.appendChild(moreSpan);
+      }
+    }
+
+    function resetBoard() {
+      currentRow = 0;
+      currentCol = 0;
+      grid = Array(6).fill().map(() => Array(5).fill(''));
+      colors = Array(6).fill().map(() => Array(5).fill(0));
+      history = [];
+      initBoard();
+      loadInitialState();
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      
+      const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+      if (activeBtn) activeBtn.classList.add('active');
+      
+      const activeContent = document.getElementById(`tab-${tabId}`);
+      if (activeContent) activeContent.classList.add('active');
+    }
+
+    async function loadOracleDate() {
+      const dateVal = document.getElementById('oracle-date-input').value;
+      if (!dateVal) return;
+      const parts = dateVal.split('-');
+      const formattedDate = `${parseInt(parts[0])}-${parseInt(parts[1])}-${parseInt(parts[2])}`;
+      
+      const resp = await fetch(`/api/oracle?date=${formattedDate}`);
+      const data = await resp.json();
+      currentSecretWord = data.word;
+      
+      const wordEl = document.getElementById('secret-word');
+      wordEl.innerText = data.word;
+      wordEl.classList.add('blurred');
+      document.getElementById('plan-container').style.display = 'none';
+    }
+
+    function toggleSecretBlur() {
+      const wordEl = document.getElementById('secret-word');
+      wordEl.classList.toggle('blurred');
+    }
+
+    async function generatePlan(mode) {
+      if (!currentSecretWord) return;
+      const resp = await fetch(`/api/plan?word=${currentSecretWord}&mode=${mode}`);
+      const data = await resp.json();
+      
+      const container = document.getElementById('plan-container');
+      const stepsEl = document.getElementById('plan-steps');
+      stepsEl.innerHTML = '';
+      
+      const colorMap = ['grey', 'yellow', 'green'];
+      
+      data.plan.forEach(step => {
+        const stepCard = document.createElement('div');
+        stepCard.className = 'step-card';
+        
+        let tilesHtml = '';
+        for (let i = 0; i < 5; i++) {
+          const letter = step.word[i];
+          const colorClass = colorMap[step.pattern[i]];
+          tilesHtml += `<div class="step-tile ${colorClass}">${letter}</div>`;
+        }
+
+        stepCard.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="font-weight: 800; font-size: 16px; color: #a5b4fc; width: 60px;">Coup #${step.step}</div>
+            <div class="step-tiles">${tilesHtml}</div>
+          </div>
+          <div class="step-desc">
+            <strong>${step.word}</strong> • ${step.note}
+          </div>
+        `;
+        stepsEl.appendChild(stepCard);
+      });
+      
+      container.style.display = 'block';
+    }
+
+    async function loadInitialState() {
+      try {
+        const resp = await fetch('/api/init');
+        const data = await resp.json();
+        
+        document.getElementById('stat-remaining').innerText = data.total_targets;
+        
+        const suggContainer = document.getElementById('suggestion-cards');
+        suggContainer.innerHTML = '';
+        data.recommended_openers.forEach((op, i) => {
+          const card = document.createElement('div');
+          card.className = 'suggestion-card';
+          card.onclick = () => insertWord(op.word);
+          card.innerHTML = `
+            <div class="sugg-left">
+              <span class="sugg-rank">#${i + 1}</span>
+              <span class="sugg-word">${op.word}</span>
+              <span class="sugg-tag tag-entropy">${op.entropy} bits</span>
+            </div>
+            <div class="sugg-right">
+              <div class="sugg-metric">
+                <div>${op.note}</div>
+              </div>
+              <button class="sugg-btn" onclick="event.stopPropagation(); insertWord('${op.word}')">Choisir</button>
+            </div>
+          `;
+          suggContainer.appendChild(card);
+        });
+
+        currentSecretWord = data.today_word;
+        const secretEl = document.getElementById('secret-word');
+        if (secretEl) secretEl.innerText = data.today_word;
+        
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        const dateInput = document.getElementById('oracle-date-input');
+        if (dateInput) dateInput.value = `${yyyy}-${mm}-${dd}`;
+
+      } catch (err) {
+        console.error("Init error:", err);
+      }
+    }
+
+    initBoard();
+    loadInitialState();
+  </script>
+</body>
+</html>
