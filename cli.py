@@ -18,9 +18,9 @@ YELLOW = "\033[93m"
 GREY = "\033[90m"
 CYAN = "\033[96m"
 
-BG_GREEN = "\033[42m\033[30m\033[1m"
-BG_YELLOW = "\033[43m\033[30m\033[1m"
-BG_GREY = "\033[100m\033[37m\033[1m"
+BG_GREEN = "\033[48;2;62;170;66m\033[37m\033[1m"
+BG_ORANGE = "\033[48;2;205;135;41m\033[37m\033[1m"
+BG_GREY = "\033[48;2;58;58;60m\033[37m\033[1m"
 
 def render_colored_word(word, pattern):
     chars = []
@@ -28,7 +28,7 @@ def render_colored_word(word, pattern):
         if p == 2:
             chars.append(f"{BG_GREEN} {letter} {RESET}")
         elif p == 1:
-            chars.append(f"{BG_YELLOW} {letter} {RESET}")
+            chars.append(f"{BG_ORANGE} {letter} {RESET}")
         else:
             chars.append(f"{BG_GREY} {letter} {RESET}")
     return " ".join(chars)
@@ -93,8 +93,8 @@ def run_interactive_assistant(engine):
             continue
 
         print(f"\nEntrez le résultat des couleurs renvoyé par wordle.louan.me :")
-        print(f"  • Format chiffres : {BOLD}0{RESET}=Gris, {BOLD}1{RESET}=Jaune, {BOLD}2{RESET}=Vert (ex: {BOLD}01200{RESET})")
-        print(f"  • Ou format lettres : {BOLD}G{RESET}=Gris, {BOLD}J{RESET}=Jaune, {BOLD}V{RESET}=Vert (ex: {BOLD}GJVGG{RESET})")
+        print(f"  • Format chiffres : {BOLD}0{RESET}=Gris, {BOLD}1{RESET}=Orange, {BOLD}2{RESET}=Vert (ex: {BOLD}01200{RESET})")
+        print(f"  • Ou format lettres : {BOLD}G{RESET}=Gris, {BOLD}O/J{RESET}=Orange/Jaune, {BOLD}V{RESET}=Vert (ex: {BOLD}GOVGG{RESET})")
         pat_str = input(f"{BOLD}> {RESET}").strip().upper()
         
         try:
